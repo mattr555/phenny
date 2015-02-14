@@ -41,7 +41,7 @@ def list_difference(new, old):
 def check_new(phenny):
     r = web.get(phenny.config.tpp_update_url)
     r = json.loads(r)
-    phenny.tpplast = list_difference(r['data']['children'], phenny.tpplast)
+    phenny.tpplast = list_difference(r['data']['children'], phenny.tpplast)[:500]
     dump(phenny)
     phenny.tpplasttime = time.time()
     phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
