@@ -41,6 +41,7 @@ def list_difference(new, old):
     for i in range(len(new)):
         if new[i] == newest:
             return new[:i] + old
+    return new
 
 def check_new(phenny):
     r = web.get(phenny.config.tpp_update_url)
