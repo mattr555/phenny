@@ -28,6 +28,8 @@ def load(phenny):
 def setup(phenny):
     phenny.tpplasttime = time.time() - 10  # manual flood protection
     phenny.tpplastdex = None
+    phenny.tpplastmoney = None
+    phenny.tpporgtime = 0
     load(phenny)
     phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
     phenny.tpp_timer.start()
@@ -71,16 +73,29 @@ def get_time(phenny, input):
     phenny.say('{}d{}h{}m'.format(d, h, m))
 get_time.rule = r'!time'
 
+def update_from_tpporg(phenny):
+    if not phenny.tpplastdex or phenny.tpporgtime + 60 > time.time():
+        r = web.get('http://twitchplayspokemon.org/')
+        d = lxml.html.document_fromstring(r)
+        dex = d.get_element_by_id('pokemon').getchildren()
+        owned = dex[2].text_content().split(' ')[1]
+        seen = dex[3].text_content().split(' ')[1]
+        phenny.tpplastdex = '{}/{}/151'.format(owned, seen)
+        phenny.tpplastmoney = '$' + d.xpath('body/div[1]/div[2]/div[2]/p[5]')[0].text_content().split(': ')[1]
+
+
 def pokedex(phenny, input):
     if phenny.tpplasttime + 10 > time.time():
         return  # bail, spammers
-    if not phenny.tpplastdex or phenny.tpplastdex[1] + 60 > time.time():
-        r = web.get('http://twitchplayspokemon.org/')
-        d = lxml.html.document_fromstring(r)
-        d = d.get_element_by_id('pokemon').getchildren()
-        owned = d[2].text_content().split(' ')[1]
-        seen = d[3].text_content().split(' ')[1]
-        phenny.tpplastdex = ('{}/{}/151'.format(owned, seen), time.time())
-    phenny.say(phenny.tpplastdex[0])
+    update_from_tpporg(phenny)
+    phenny.say(phenny.tpplastdex)
     phenny.tpplasttime = time.time()
 pokedex.rule = r'!(pok[eé])?dex'
+
+def money(phenny, input):
+    if phenny.tpplasttime + 10 > time.time():
+        return  # bail, spammers
+    update_from_tpporg(phenny)
+    phenny.say(phenny.tpplastmoney)
+    phenny.tpplasttime = time.time()
+money.rule = r'!(money|(pok[eé])?yen)'
