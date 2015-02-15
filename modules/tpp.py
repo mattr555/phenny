@@ -4,6 +4,7 @@ import time
 import datetime
 import threading
 import os
+import lxml.html
 
 def filename(phenny):
     name = phenny.nick + '-' + phenny.config.host + '.tpp.db'
@@ -26,6 +27,7 @@ def load(phenny):
 
 def setup(phenny):
     phenny.tpplasttime = time.time() - 10  # manual flood protection
+    phenny.tpplastdex = None
     load(phenny)
     phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
     phenny.tpp_timer.start()
@@ -68,3 +70,17 @@ def get_time(phenny, input):
     m = delta.seconds // 60 % 60
     phenny.say('{}d{}h{}m'.format(d, h, m))
 get_time.rule = r'!time'
+
+def pokedex(phenny, input):
+    if phenny.tpplasttime + 10 > time.time():
+        return  # bail, spammers
+    if not phenny.tpplastdex or phenny.tpplastdex[1] + 60 > time.time():
+        r = web.get('http://twitchplayspokemon.org/')
+        d = lxml.html.document_fromstring(r)
+        d = d.get_element_by_id('pokemon').getchildren()
+        owned = d[2].text_content().split(' ')[1]
+        seen = d[3].text_content().split(' ')[1]
+        phenny.tpplastdex = ('{}/{}/151'.format(owned, seen), time.time())
+    phenny.say(phenny.tpplastdex[0])
+    phenny.tpplasttime = time.time()
+pokedex.rule = r'!(pok[eé])?dex'
