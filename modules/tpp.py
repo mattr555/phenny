@@ -25,7 +25,7 @@ def load(phenny):
     dump(phenny)
 
 def setup(phenny):
-    phenny.tpplasttime = time.time() - 61
+    phenny.tpplasttime = time.time() - 10  # manual flood protection
     load(phenny)
     phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
     phenny.tpp_timer.start()
@@ -43,11 +43,12 @@ def check_new(phenny):
     r = json.loads(r)
     phenny.tpplast = list_difference(r['data']['children'], phenny.tpplast)[:500]
     dump(phenny)
-    phenny.tpplasttime = time.time()
     phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
     phenny.tpp_timer.start()
 
 def get_msg(phenny, input):
+    if phenny.tpplasttime + 10 > time.time():
+        return  # bail, spammers
     if not phenny.tpplast:
         check_new(phenny)
     if input.group(1) and input.group(1).isdigit():
@@ -56,6 +57,7 @@ def get_msg(phenny, input):
         num = 0
     if num > len(phenny.tpplast) - 1:
         return phenny.say('Sorry, too far back.')
+    phenny.tpplasttime = time.time()
     phenny.say('{} - /u/{}'.format(phenny.tpplast[num]['data']['body'], phenny.tpplast[num]['data']['author']))
 get_msg.rule = r'!update(?:\s(\d+))?'
 
