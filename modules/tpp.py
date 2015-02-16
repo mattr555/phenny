@@ -29,6 +29,7 @@ def setup(phenny):
     phenny.tpplasttime = time.time() - 10  # manual flood protection
     phenny.tpplastdex = None
     phenny.tpplastmoney = None
+    phenny.tppteam = []
     phenny.tpporgtime = 0
     load(phenny)
     phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
@@ -84,6 +85,12 @@ def update_from_tpporg(phenny):
         phenny.tpplastdex = '{}/{}/151'.format(owned, seen)
         phenny.tpplastmoney = '$' + d.xpath('body/div[1]/div[2]/div[2]/p[5]')[0].text_content().split(': ')[1]
 
+        phenny.tppteam = []
+        pokemon = d.cssselect('#pokemon + div table')[0]
+        for i in range(len(pokemon.cssselect('th'))):
+            mon = pokemon.cssselect('th')[i].text_content().split()[1]
+            level = pokemon.cssselect('tr')[2].cssselect('td')[i].text_content().split()[1]
+            phenny.tppteam.append('L{} {}'.format(level, mon))
 
 def pokedex(phenny, input):
     if phenny.tpplasttime + 10 > time.time():
@@ -100,3 +107,11 @@ def money(phenny, input):
     phenny.say(phenny.tpplastmoney)
     phenny.tpplasttime = time.time()
 money.rule = r'!(money|(pok[eé])?yen)'
+
+def team(phenny, input):
+    if phenny.tpplasttime + 10 > time.time():
+        return  # bail, spammers
+    update_from_tpporg(phenny)
+    phenny.say(', '.join(phenny.tppteam))
+    phenny.tpplasttime = time.time()
+team.rule = r'!team'
