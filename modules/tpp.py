@@ -3,27 +3,7 @@ import json
 import time
 import datetime
 import threading
-import os
 import lxml.html
-
-def filename(phenny):
-    name = phenny.nick + '-' + phenny.config.host + '.tpp.db'
-    return os.path.join(os.path.expanduser('~/.phenny'), name)
-
-def dump(phenny):
-    with open(filename(phenny), 'w') as f:
-        json.dump(phenny.tpplast, f)
-
-def load(phenny):
-    if os.path.exists(filename(phenny)):
-        with open(filename(phenny)) as f:
-            try:
-                phenny.tpplast = json.loads(f.read())
-            except ValueError:
-                phenny.tpplast = []
-    else:
-        phenny.tpplast = []
-    dump(phenny)
 
 def setup(phenny):
     phenny.tpplasttime = time.time() - 10  # manual flood protection
@@ -31,24 +11,14 @@ def setup(phenny):
     phenny.tpplastmoney = None
     phenny.tppteam = []
     phenny.tpporgtime = 0
-    load(phenny)
+    phenny.tpplast = []
     phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
     phenny.tpp_timer.start()
-
-def list_difference(new, old):
-    if len(old) == 0:
-        return new
-    newest = old[0]
-    for i in range(len(new)):
-        if new[i] == newest:
-            return new[:i] + old
-    return new
 
 def check_new(phenny):
     r = web.get(phenny.config.tpp_update_url)
     r = json.loads(r)
-    phenny.tpplast = list_difference(r['data']['children'], phenny.tpplast)[:500]
-    dump(phenny)
+    phenny.tpplast = r['data']['children']
     phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
     phenny.tpp_timer.start()
 
