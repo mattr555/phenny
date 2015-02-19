@@ -16,11 +16,14 @@ def setup(phenny):
     phenny.tpp_timer.start()
 
 def check_new(phenny):
-    r = web.get(phenny.config.tpp_update_url)
-    r = json.loads(r)
-    phenny.tpplast = r['data']['children']
-    phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
-    phenny.tpp_timer.start()
+    try:
+        r = web.get(phenny.config.tpp_update_url)
+        r = json.loads(r)
+        phenny.tpplast = r['data']['children']
+        phenny.tpp_timer = threading.Timer(60, check_new, (phenny,))
+        phenny.tpp_timer.start()
+    except:
+        pass
 
 def get_msg(phenny, input):
     if phenny.tpplasttime + 10 > time.time():
