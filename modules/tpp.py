@@ -87,4 +87,15 @@ def team(phenny, input):
     update_from_tpporg(phenny)
     phenny.say(', '.join(phenny.tppteam))
     phenny.tpplasttime = time.time()
-team.rule = r'!team'
+team.rule = r'!(team|party)'
+
+def viewers(phenny, input):
+    if phenny.tpplasttime + 10 > time.time():
+        return  # bail, spammers
+    r = web.get('https://api.twitch.tv/kraken/streams/twitchplayspokemon',
+                {'Accept': 'application/vnd.twitchtv.v3+json', 'Client-ID': phenny.config.twitch_client_id})
+    r = json.loads(r)
+    if r.get('stream'):
+        return phenny.say('{} viewers'.format(r['stream']['viewers']))
+    return phenny.say("TPP doesn't appear to be live!")
+viewers.rule = r'!viewers'
